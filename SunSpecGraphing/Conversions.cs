@@ -88,50 +88,16 @@
 
             return color;
         }
+        
 
-        public static void ConvertAllWavelenghtsToARGB()
-        {
-            for (int i = 0; i < Global.SAMPLE_SIZE; i++)
-            // 2048 samples for each wavelength
-            {
-                Global.WAVELENGTH_ARGB[i] = wavelengthToARGB(Global.WAVELENGTHS[i]);
-                Global.WAVELENGTH_ARGB_ACTIVE = (Color[])Global.WAVELENGTH_ARGB.Clone();
-            }
-        }
-
-        public static void CalculateAllPositionalWavelengthValues()
-        {
-            for (int i = 0; i < Global.SAMPLE_SIZE; i++)
-            {
-                // NOTE: Multiplied by one here is redundant but the expresion is
-                // ( x / a ) * b WHERE x = input value, a = current range, b = wanted range
-                Global.WAVELENGTH_GRADIENT_POS[i] = (((float)Global.WAVELENGTHS[i] - (float)Global.WAVELENGTHS[0]) / (float)Global.SPECTROMETER_RANGE);
-            }
-        }
-
-        public static Color IntensityToColor(UInt16 Intensity, Color color)
+        public static Color IntensityToColor(UInt16 Intensity, Color color, int MaxValue)
         {
             // First convert the intensity to an alpha value using a similar method used in "CalculateAllPositionalWavelengthValues"
-            int newAlpha = (int)((double)((double)Intensity / (double)Global.MAX_GRAPH_Y_VALUE) * (double)255); // This gets the ratio of intensity to alpha value
+            int newAlpha = (int)((double)((double)Intensity / (double)MaxValue) * (double)255); // This gets the ratio of intensity to alpha value
             // Console.WriteLine($"Old: {Intensity}  -  New: {newAlpha}");
             int newARGB = (color.ToArgb() & 0x00FFFFFF) | (newAlpha << 24); // Shift the alpha to the proper place with masking
             Color newColor = Color.FromArgb(newARGB);
             return newColor;
-        }
-
-        public static void UpdateAllColors()
-        {
-            for (int i = 0; i < Global.SAMPLE_SIZE; i++)
-            {
-                Color updatedColor = IntensityToColor(SpectrometerHandler.currentData[i], Global.WAVELENGTH_ARGB_ACTIVE[i]);
-                Global.WAVELENGTH_ARGB_ACTIVE[i] = updatedColor;
-            }
-        }
-
-        public static void SetUpConstants()
-        {
-            ConvertAllWavelenghtsToARGB();
-            CalculateAllPositionalWavelengthValues();
         }
     }
 }

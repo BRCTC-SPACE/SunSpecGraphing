@@ -13,41 +13,56 @@ namespace SunSpecGraphing
         private int POS_X;
         private int POS_Y;
         private Form parent;
+        private SpectrometerDataHandler data;
 
         // Vars that can be changed if needed
         // (Technically I want to make them all changable but these
         //  ones are more like "settings")
+        public bool useGraphingColor = false;
+
         private int GRAPH_PADDING_TOP    = 3;
         private int GRAPH_PADDING_BOTTOM = 3;
         private int SPECTRA_BAR_HEIGHT   = 50;
 
+        // This will be changable based on the users option
+        private int MAX_INTENSITY_VALUE = 65535;
+
 
         public int[] wavelengthPositions = new int[Global.SAMPLE_SIZE];
 
-        public GraphingAPI(int width, int height, int pos_x, int pos_y, Form parent)
+        public Color[] WavelengthColors = new Color[Global.SAMPLE_SIZE];
+        public Color[] ActiveWavelengthColorIntensities = new Color[Global.SAMPLE_SIZE];
+        public float[] WavelenghtGradientPositions = new float[Global.SAMPLE_SIZE];
+
+
+        public GraphingAPI(int width, int height, int pos_x, int pos_y, Form parent, SpectrometerDataHandler data)
         {
             WIDTH = width;
             HEIGHT = height;
             POS_X = pos_x;
             POS_Y = pos_y;
             this.parent = parent;
+            this.data = data;
+
+            MAX_INTENSITY_VALUE = data.GetMaxIntensity();
+            Init();
         }
 
-        public void DrawDataGraph()
+        private void DrawDataGraph()
         {
             Point[] points = new Point[Global.SAMPLE_SIZE];
             for (int i = 0; i < Global.SAMPLE_SIZE; i++)
             {
-                points[i] = new Point(wavelengthPositions[i], CalculateYPosition(SpectrometerHandler.currentData[i]));
+                points[i] = new Point(wavelengthPositions[i], CalculateYPosition(data.Intensities[i]));
             }
 
             using (Graphics g = parent.CreateGraphics())
             {
-                if (Global.UseGraphingColor)
+                if (useGraphingColor)
                 {
                     ColorBlend colorBlend = new ColorBlend();
-                    colorBlend.Colors = Global.WAVELENGTH_ARGB;
-                    colorBlend.Positions = Global.WAVELENGTH_GRADIENT_POS;
+                    colorBlend.Colors = WavelengthColors;
+                    colorBlend.Positions = WavelenghtGradientPositions;
 
                     using (LinearGradientBrush brush = new LinearGradientBrush(points[0], points[points.Length - 1], Color.Red, Color.Blue))
                     {
@@ -65,9 +80,9 @@ namespace SunSpecGraphing
             }
         }
 
-        public void DrawSpectraBar()
+        private void DrawSpectraBar()
         {
-            Conversions.UpdateAllColors();
+            UpdateAllColors();
 
             using (Graphics g = parent.CreateGraphics())
             {
@@ -88,8 +103,8 @@ namespace SunSpecGraphing
 
                 // Create the blend of spectra based on the active alpha/intensity of data
                 ColorBlend colorBlend = new ColorBlend();
-                colorBlend.Colors = Global.WAVELENGTH_ARGB_ACTIVE;
-                colorBlend.Positions = Global.WAVELENGTH_GRADIENT_POS;
+                colorBlend.Colors = ActiveWavelengthColorIntensities;
+                colorBlend.Positions = WavelenghtGradientPositions;
 
                 using (LinearGradientBrush brush = new LinearGradientBrush(rect, Color.Red, Color.Blue, LinearGradientMode.Horizontal))
                 {
@@ -99,15 +114,18 @@ namespace SunSpecGraphing
             }
         }
 
-        public int CalculateYPosition(int Intensity)
+        private int CalculateYPosition(int Intensity)
         {
             // Calculate Y
-            int y = (HEIGHT - (int)(((double)Intensity / (double)Global.MAX_GRAPH_Y_VALUE) * (double)HEIGHT)) + POS_Y;
+
+            // TODO: Add logic for if local or global max
+
+            int y = (HEIGHT - (int)(((double)Intensity / (double)MAX_INTENSITY_VALUE) * (double)HEIGHT)) + POS_Y;
             // Console.WriteLine(y);
             return y;
         }
 
-        public void BakeWavelengthPositions()
+        private void BakeWavelengthPositions()
         {
             // Calculate all the X values once as they don't change
             for (int i = 0; i < Global.SAMPLE_SIZE; i++)
@@ -117,6 +135,46 @@ namespace SunSpecGraphing
             }
         }
 
+        private void UpdateAllColors()
+        {
+            for (int i = 0; i < Global.SAMPLE_SIZE; i++)
+            {
+                Color updatedColor = Conversions.IntensityToColor(data.Intensities[i], WavelengthColors[i], MAX_INTENSITY_VALUE);
+                ActiveWavelengthColorIntensities[i] = updatedColor;
+            }
+        }
 
+        private void CalculateAllPositionalWavelengthValues()
+        {
+            for (int i = 0; i < Global.SAMPLE_SIZE; i++)
+            {
+                // NOTE: Multiplied by one here is redundant but the expresion is
+                // ( x / a ) * b WHERE x = input value, a = current range, b = wanted range
+                WavelenghtGradientPositions[i] = (((float)Global.WAVELENGTHS[i] - (float)Global.WAVELENGTHS[0]) / (float)Global.SPECTROMETER_RANGE);
+            }
+        }
+
+        private void ConvertAllWavelenghtsToARGB()
+        {
+            for (int i = 0; i < Global.SAMPLE_SIZE; i++)
+            // 2048 samples for each wavelength
+            {
+                WavelengthColors[i] = Conversions.wavelengthToARGB(Global.WAVELENGTHS[i]);
+                ActiveWavelengthColorIntensities = (Color[])WavelengthColors.Clone();
+            }
+        }
+
+        private void Init()
+        {
+            BakeWavelengthPositions();
+            CalculateAllPositionalWavelengthValues();
+            ConvertAllWavelenghtsToARGB();
+        }
+
+        public void UpdateGraph()
+        {
+            DrawDataGraph();
+            DrawSpectraBar();
+        }
     }
 }

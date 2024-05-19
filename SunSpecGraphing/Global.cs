@@ -2,10 +2,6 @@
 {
     internal class Global
     {
-        // Options
-        static public bool UseGraphingColor = false;
-
-        // Data
         static public int SAMPLE_SIZE = 2048;
         static public double SPECTROMETER_RANGE = 707.33; // This is from 177.62nm -> 884.95nm
         static public List<double> WAVELENGTHS = new List<double>
@@ -2059,9 +2055,5 @@
             884.66,
             884.95,
         };
-        static public Color[] WAVELENGTH_ARGB = new Color[SAMPLE_SIZE];
-        static public Color[] WAVELENGTH_ARGB_ACTIVE = new Color[SAMPLE_SIZE];
-        static public float[] WAVELENGTH_GRADIENT_POS = new float[SAMPLE_SIZE];
-        static public int MAX_GRAPH_Y_VALUE = 65535;
     }
 }

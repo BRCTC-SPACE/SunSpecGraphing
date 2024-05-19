@@ -3,6 +3,7 @@ namespace SunSpecGraphing
     public partial class mainWindow : Form
     {
         private GraphingAPI graph;
+        private SpectrometerDataHandler currentData;
 
         public mainWindow()
         {
@@ -13,29 +14,25 @@ namespace SunSpecGraphing
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
 
-            graph = new GraphingAPI(800, 500, 0, 75, this);
-
-            SpectrometerHandler.PrintData();
-
-            Global.MAX_GRAPH_Y_VALUE = SpectrometerHandler.currentData.Max();
-
-            Conversions.SetUpConstants();
-
-            graph.BakeWavelengthPositions();
+            currentData = new SpectrometerDataHandler("C:\\Users\\pokem\\Desktop\\Share\\AllData\\data.spec");
+            graph = new GraphingAPI(800, 500, 0, 75, this, currentData);
         }
 
         private void UpdateGraphs()
         {
-            graph.DrawDataGraph();
+            try
+            {
+                graph.UpdateGraph();
+            } 
+            catch
+            {
 
-            // TODO OPT: Maybe have a seperate call for this because it doesn't change
-            // This may help performance if needed
-            graph.DrawSpectraBar();
+            }
         }
 
         private void toggleGraphColorToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Global.UseGraphingColor = !Global.UseGraphingColor;
+            graph.useGraphingColor = !graph.useGraphingColor;
             UpdateGraphs();
         }
     }
