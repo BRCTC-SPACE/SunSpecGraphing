@@ -112,7 +112,7 @@
         public static Color IntensityToColor(UInt16 Intensity, Color color)
         {
             // First convert the intensity to an alpha value using a similar method used in "CalculateAllPositionalWavelengthValues"
-            int newAlpha = (int)((double)((double)Intensity / (double)Global.MAX_Y_VALUE) * (double)255); // This gets the ratio of intensity to alpha value
+            int newAlpha = (int)((double)((double)Intensity / (double)Global.MAX_GRAPH_Y_VALUE) * (double)255); // This gets the ratio of intensity to alpha value
             // Console.WriteLine($"Old: {Intensity}  -  New: {newAlpha}");
             int newARGB = (color.ToArgb() & 0x00FFFFFF) | (newAlpha << 24); // Shift the alpha to the proper place with masking
             Color newColor = Color.FromArgb(newARGB);

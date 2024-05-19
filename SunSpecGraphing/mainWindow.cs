@@ -13,21 +13,30 @@ namespace SunSpecGraphing
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
 
-            graph = new GraphingAPI(500, 300, 10, 100, this);
+            graph = new GraphingAPI(800, 500, 0, 75, this);
 
             SpectrometerHandler.PrintData();
 
-            Global.MAX_Y_VALUE = SpectrometerHandler.currentData.Max();
+            Global.MAX_GRAPH_Y_VALUE = SpectrometerHandler.currentData.Max();
 
             Conversions.SetUpConstants();
 
             graph.BakeWavelengthPositions();
         }
 
+        private void UpdateGraphs()
+        {
+            graph.DrawDataGraph();
+
+            // TODO OPT: Maybe have a seperate call for this because it doesn't change
+            // This may help performance if needed
+            graph.DrawSpectraBar();
+        }
+
         private void toggleGraphColorToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Global.UseGraphingColor = !Global.UseGraphingColor;
-            graph.DrawDataGraph();
+            UpdateGraphs();
         }
     }
 }
