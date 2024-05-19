@@ -2,6 +2,10 @@
 {
     internal class Global
     {
+        // Options
+        static public bool UseGraphingColor = false;
+
+        // Data
         static public int SAMPLE_SIZE = 2048;
         static public double SPECTROMETER_RANGE = 707.33; // This is from 177.62nm -> 884.95nm
         static public List<double> WAVELENGTHS = new List<double>
