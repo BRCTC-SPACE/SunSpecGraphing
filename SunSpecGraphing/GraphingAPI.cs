@@ -4,8 +4,8 @@ namespace SunSpecGraphing
 {
     internal class GraphingAPI
     {
-        // Graph position is bottom left 
-        // TODO: Figure out if this is correct
+        // TODO:
+        //      Give the option to "remove" the first x spectra from the graph
 
         // Variables that are initalized on object creation
         private int WIDTH;
@@ -39,6 +39,14 @@ namespace SunSpecGraphing
         public float[] WavelenghtGradientPositions = new float[Global.SAMPLE_SIZE];
 
 
+        public int Width => WIDTH;
+        public int Height => HEIGHT;
+        public int GraphPaddingLeft => GRAPH_PADDING_LEFT;
+        public int GraphPaddingRight => GRAPH_PADDING_RIGHT;
+        public int GraphPaddingTop => GRAPH_PADDING_TOP;
+        public int GraphPaddingBottom => GRAPH_PADDING_BOTTOM;
+        public int SpectraBarHeight => SPECTRA_BAR_HEIGHT;
+
         public GraphingAPI(int width, int height, int pos_x, int pos_y, Form parent, SpectrometerDataHandler data)
         {
             WIDTH = width;
@@ -47,9 +55,18 @@ namespace SunSpecGraphing
             POS_Y = pos_y;
             this.parent = parent;
             this.data = data;
-
-            MAX_INTENSITY_VALUE = data.GetMaxIntensity();
+            if (data != null)
+            {
+                MAX_INTENSITY_VALUE = data.GetMaxIntensity();
+            }
             Init();
+        }
+
+        public void UpdateDimensions(int width, int height)
+        {
+            WIDTH = width;
+            HEIGHT = height;
+            BakeWavelengthPositions();
         }
 
         private void DrawAxes(Graphics g)
@@ -225,6 +242,88 @@ namespace SunSpecGraphing
                         brush.InterpolationColors = colorBlend;
                         g.FillRectangle(brush, rect);
                     }
+                }
+            }
+        }
+
+        public void RenderGraph(Graphics g)
+        {
+            // Fill the area behind the graph with white
+            using (Brush whiteBrush = new SolidBrush(Color.Gray))
+            {
+                g.FillRectangle(whiteBrush,
+                    POS_X + GRAPH_PADDING_LEFT,
+                    POS_Y + GRAPH_PADDING_TOP,
+                    WIDTH - GRAPH_PADDING_LEFT - GRAPH_PADDING_RIGHT,
+                    HEIGHT - GRAPH_PADDING_TOP - GRAPH_PADDING_BOTTOM);
+            }
+
+            // Draw axes
+            DrawAxes(g);
+
+            // Draw data points
+            Point[] points = new Point[Global.SAMPLE_SIZE];
+            for (int i = 0; i < Global.SAMPLE_SIZE; i++)
+            {
+                points[i] = new Point(wavelengthPositions[i], CalculateYPosition(data.Intensities[i]));
+            }
+
+            if (useGraphingColor)
+            {
+                ColorBlend colorBlend = new ColorBlend();
+                colorBlend.Colors = WavelengthColors;
+                colorBlend.Positions = WavelenghtGradientPositions;
+
+                using (LinearGradientBrush brush = new LinearGradientBrush(points[0], points[points.Length - 1], Color.Red, Color.Blue))
+                {
+                    brush.InterpolationColors = colorBlend;
+                    g.DrawLines(new Pen(brush), points);
+                }
+            }
+            else
+            {
+                using (Pen pen = new Pen(Color.Black))
+                {
+                    g.DrawLines(pen, points);
+                }
+            }
+
+            // Draw legend and labels
+            DrawLegend(g);
+            DrawLabels(g);
+        }
+
+        public void RenderSpectraBar(Graphics g)
+        {
+            UpdateAllColors();
+            using (Font font = new Font(GraphFontType, GraphFontSize))
+            {
+                SizeF labelSize = g.MeasureString("Example", font);
+                int labelHeight = (int)labelSize.Height;
+                int spectraBarYPosition = POS_Y + HEIGHT - GRAPH_PADDING_BOTTOM + labelHeight + 10;
+
+                Rectangle rect = new Rectangle(
+                    POS_X,                      // X
+                    spectraBarYPosition,        // Y
+                    WIDTH,                      // Width
+                    SPECTRA_BAR_HEIGHT          // Height
+                );
+
+                // Creates a solid black background which helps define the spectra
+                using (SolidBrush backgroundBrush = new SolidBrush(Color.Black))
+                {
+                    g.FillRectangle(backgroundBrush, rect);
+                }
+
+                // Create the blend of spectra based on the active alpha/intensity of data
+                ColorBlend colorBlend = new ColorBlend();
+                colorBlend.Colors = ActiveWavelengthColorIntensities;
+                colorBlend.Positions = WavelenghtGradientPositions;
+
+                using (LinearGradientBrush brush = new LinearGradientBrush(rect, Color.Red, Color.Blue, LinearGradientMode.Horizontal))
+                {
+                    brush.InterpolationColors = colorBlend;
+                    g.FillRectangle(brush, rect);
                 }
             }
         }
